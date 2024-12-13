@@ -1,0 +1,67 @@
+"""
+  Author: James A. Scott
+  Description: Export CO2 Emissions_Canada from cloud data using Alchemy SQL Server to target server SQL CO2 Emissions_Canada table.
+  Created On: 12/12/2024
+"""
+
+"""
+# Step 1. Import Python Libraries section:
+"""
+
+import pandas as pd
+import sqlalchemy
+from sqlalchemy import create_engine
+
+"""
+# Step 2. Load source server connection variables section:
+"""
+
+SERVER = 'sql5006.site4now.net'
+DATABASE ='DB_A3B5DE_datastore'
+DRIVER = 'SQL Server Native Client 11.0'
+USERNAME ='DB_A3B5DE_datastore_admin'
+PASSWORD = 'S1c2o3t4t5'
+
+"""
+# Step 3. create source engine that connect this Python app to the source server section:
+"""
+SOURCE_DATABASE_CONNECTION = f'mssql://{USERNAME}:{PASSWORD}@{SERVER}/{DATABASE}?driver={DRIVER}'
+engine = create_engine(SOURCE_DATABASE_CONNECTION)
+sconn = engine.connect()
+
+"""
+# Step 4. Load target server connection variables section:
+"""
+
+SERVER_T = 'PCJ'
+DATABASE_T ='TestDb'
+DRIVER = 'SQL Server Native Client 11.0'
+USERNAME_T ='TestScottie'
+PASSWORD_T = 'J5a4m3e2s1$'
+
+"""
+# Step 5. create target engine that connects this Python app to the target serversection:
+"""
+
+TARGET_DATABASE_CONNECTION = f'mssql://{USERNAME_T}:{PASSWORD_T}@{SERVER_T}/{DATABASE_T}?driver={DRIVER}'
+engine = create_engine(TARGET_DATABASE_CONNECTION)
+tconn = engine.connect()
+
+"""
+# Step 6. clear(TRUNCATE) CO2 Emissions_Canada table section:
+"""
+truncate_query = sqlalchemy.text("TRUNCATE TABLE dbo.[CO2 Emissions_Canada]")
+tconn.execute(truncate_query)
+tconn.commit()
+
+"""
+# Step 8. Execute Python function to retreive source records section:
+"""
+df = pd.read_sql_query("select * from [dbo].[CO2 Emissions_Canada] ORDER BY [Make],[Model], [Vehicle_Class]",sconn)
+"""
+# Step 9. Execute Python function to land source records on target server section:
+"""
+df.to_sql("CO2 Emissions_Canada",con=tconn, if_exists = "append", index=False)  
+
+tconn.close()
+sconn.close()

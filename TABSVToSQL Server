@@ -1,0 +1,73 @@
+# Author: James A. Scott
+# Desceiption: Export Customer Tab Common Value file to SQL Server Customer table.
+               # using pyodbc library.  
+# Created On: 12/04/2024
+
+# Section: Import
+
+import pandas as pd  # used for data analysis manipulation
+import csv
+import socket
+import sqlalchemy
+import pyodbc
+from sqlalchemy.engine import URL
+from sqlalchemy import Engine, create_engine
+
+
+
+# Section: Conection to the SQL Server.
+
+SERVER = socket.gethostname()
+DATABASE = 'TestDb'
+USERNAME = 'TestScottie'
+PASSWORD = 'J5a4m3e2s1$'
+DRIVER = 'SQL Server Native Client 11.0'
+
+conn = pyodbc.connect(
+    user= "TestScottie",
+    password="J5a4m3e2s1$",
+    Server = "PCJ",
+    Database= "TestDb",
+    Driver = 'SQL Server Native Client 11.0')
+
+cursor =conn.cursor()
+DATABASE_CONNECTION = f'mssql://{USERNAME}:{PASSWORD}@{SERVER}/{DATABASE}?DRIVER={DRIVER}'
+engine = create_engine(DATABASE_CONNECTION)
+connection=engine.connect()
+
+truncate_query = sqlalchemy.text("TRUNCATE TABLE dbo.customerstsv")
+connection.execute(truncate_query)
+connection.commit()
+
+# Section: Read Common Separated Value file. 
+
+myfile = './data/customerstab.csv'
+df = pd.read_csv(myfile, delimiter='\t')
+#print(df.head(10))  # Print the first few rows of the DataFrame
+
+# insert CSV rows into SQL Server customer table.
+for row in df.itertuples():
+    cursor.execute('''
+                 INSERT INTO TestDb.dbo.customerstsv(Id,customerId,FirstName,LastName,Company,City,Country,Phone1,Phone2,Email,SubscriptionDate,Website)
+                 VALUES (?,?,?,?,?,?,?,?,?,?,?,?)''',
+                                                    row.Id,
+                                                    row.CustomerId,
+                                                    row.FirstName,
+                                                    row.LastName,
+                                                    row.Company,
+                                                    row.City,
+                                                    row.Country,
+                                                    row.Phone1,
+                                                    row.Phone2,
+                                                    row.Email,
+                                                    row.SubscriptionDate,
+                                                    row.Website
+                                                    
+    )
+
+conn.commit()
+
+# List SQL Server customerstsv records to terminal.
+df = pd.read_sql_query("SELECT * FROM customerstsv ORDER BY Country,Company",conn)
+print(df.to_string())
+
